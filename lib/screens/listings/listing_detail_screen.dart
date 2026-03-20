@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../models/listing_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/listing_provider.dart';
 import 'listing_form_screen.dart';
 
 class ListingDetailScreen extends StatelessWidget {
@@ -51,37 +54,108 @@ class ListingDetailScreen extends StatelessWidget {
                   shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
                 ),
               ),
-              background: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(listing.latitude, listing.longitude),
-                  zoom: 15,
-                ),
-                liteModeEnabled: true,
-                zoomControlsEnabled: false,
-                markers: {
-                  Marker(
-                    markerId: MarkerId(listing.id),
-                    position: LatLng(listing.latitude, listing.longitude),
+              background: FlutterMap(
+                options: MapOptions(
+                  initialCenter: LatLng(listing.latitude, listing.longitude),
+                  initialZoom: 15,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.none,
                   ),
-                },
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName:
+                        'com.kigalicitservices.kigali_city_directory',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        point: LatLng(listing.latitude, listing.longitude),
+                        width: 40,
+                        height: 40,
+                        child: const Icon(
+                          Icons.location_on,
+                          color: Colors.red,
+                          size: 40,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            actions: isOwner
-                ? [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.white),
-                      tooltip: 'Edit Listing',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ListingFormScreen(listing: listing),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share, color: Colors.white),
+                tooltip: 'Share',
+                onPressed: () {
+                  final mapUrl =
+                      "https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}";
+                  Share.share(
+                    "Check out ${listing.name} at ${listing.address}. $mapUrl",
+                  );
+                },
+              ),
+              if (isOwner) ...[
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.white),
+                  tooltip: 'Edit Listing',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ListingFormScreen(listing: listing),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                  tooltip: 'Delete Listing',
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Delete Listing'),
+                        content: const Text(
+                          'Are you sure you want to delete this listing? This action cannot be undone.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
                           ),
-                        );
-                      },
-                    ),
-                  ]
-                : null,
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      if (context.mounted) {
+                        await Provider.of<ListingProvider>(
+                          context,
+                          listen: false,
+                        ).deleteListing(listing.id);
+                        if (context.mounted) {
+                          Navigator.pop(context); // Go back to list
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Listing Deleted')),
+                          );
+                        }
+                      }
+                    }
+                  },
+                ),
+              ],
+            ],
           ),
 
           // Content

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../providers/listing_provider.dart';
 import '../listings/listing_detail_screen.dart';
 
@@ -12,104 +14,220 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  static const LatLng _kigaliCenter = LatLng(-1.9441, 30.0619);
-  GoogleMapController? _mapController;
+  // Center map on Kigali Convention Centre area by default
+  static const LatLng _kigaliCenter = LatLng(-1.9538, 30.0934);
+  final MapController _mapController = MapController();
+  bool _locationPermissionGranted = false;
+  Position? _currentPosition;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLocationPermission();
+  }
+
+  Future<void> _checkLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      return;
+    }
+
+    // Get current position
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      setState(() {
+        _locationPermissionGranted = true;
+        _currentPosition = position;
+      });
+      // Optional: Move map to user location on startup
+      // _mapController.move(LatLng(position.latitude, position.longitude), 14);
+    } catch (e) {
+      print("Error getting location: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Get listings - will include mock data if DB is empty
     final listings = Provider.of<ListingProvider>(context).listings;
 
-    final Set<Marker> markers = listings.map((listing) {
-      return Marker(
-        markerId: MarkerId(listing.id),
-        position: LatLng(listing.latitude, listing.longitude),
-        infoWindow: InfoWindow(
-          title: listing.name,
-          snippet: listing.category,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ListingDetailScreen(listing: listing),
-              ),
-            );
-          },
-        ),
-      );
-    }).toSet();
-
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text(
-          'City Map',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white.withOpacity(0.9),
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        centerTitle: true,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
-        toolbarHeight: 50,
-      ),
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: const CameraPosition(
-              target: _kigaliCenter,
-              zoom: 12.0,
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: _kigaliCenter,
+              initialZoom: 13.5,
             ),
-            markers: markers,
-            onMapCreated: (controller) {
-              _mapController = controller;
-            },
-            myLocationEnabled: true,
-            myLocationButtonEnabled: false, // We'll add a custom button
-            zoomControlsEnabled: false, // Cleaner look
-            mapToolbarEnabled: false,
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName:
+                    'com.kigalicitservices.kigali_city_directory',
+              ),
+              MarkerLayer(
+                markers: [
+                  ...listings.map((listing) {
+                    return Marker(
+                      point: LatLng(listing.latitude, listing.longitude),
+                      width: 60,
+                      height: 60,
+                      child: GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  ListingDetailScreen(listing: listing),
+                            ),
+                          );
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF9C27B0,
+                                ), // Aesthetic Purple
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.location_on,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                listing.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  if (_currentPosition != null)
+                    Marker(
+                      point: LatLng(
+                        _currentPosition!.latitude,
+                        _currentPosition!.longitude,
+                      ),
+                      width: 40,
+                      height: 40,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.3),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.blue, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.my_location,
+                          color: Colors.blue,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ),
-
-          // Floating Action Buttons
+          // Information Panel
           Positioned(
-            bottom: 100,
+            left: 16,
             right: 16,
-            child: Column(
-              children: [
-                _buildMapFab(Icons.my_location, () {
-                  // Logic to go to my location would require location package access here
-                  // or controller.animateCamera to user location if available
-                }),
-                const SizedBox(height: 12),
-                _buildMapFab(Icons.add, () {
-                  _mapController?.animateCamera(CameraUpdate.zoomIn());
-                }),
-                const SizedBox(height: 12),
-                _buildMapFab(Icons.remove, () {
-                  _mapController?.animateCamera(CameraUpdate.zoomOut());
-                }),
-              ],
+            bottom: 30, // Lifted for visibility
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${listings.length} Places Found",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF9C27B0),
+                        ),
+                      ),
+                      const Text(
+                        "Explore the map to see more",
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF3E5F5), // Light purple
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.map_outlined,
+                      color: Color(0xFF9C27B0),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMapFab(IconData icon, VoidCallback onPressed) {
-    return Material(
-      color: Colors.white,
-      shadowColor: Colors.black26,
-      elevation: 4,
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          child: Icon(icon, color: Colors.blue[800]),
-        ),
       ),
     );
   }

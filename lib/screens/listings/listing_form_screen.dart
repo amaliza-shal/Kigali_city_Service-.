@@ -69,18 +69,24 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
     setState(() => _isLoading = true);
     try {
       Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
+      if (!mounted) return;
       _latController.text = position.latitude.toString();
       _lngController.text = position.longitude.toString();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not get location. Check permissions.'),
         ),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

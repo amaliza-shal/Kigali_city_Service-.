@@ -33,16 +33,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1565C0), // Professional Blue
-          primary: const Color(0xFF1565C0),
-          secondary: const Color(0xFF0D47A1),
-          surface: const Color(0xFFF8F9FA),
+          seedColor: const Color(0xFF9C27B0), // Aesthetic Purple
+          primary: const Color(0xFF9C27B0),
+          secondary: const Color(0xFFF48FB1), // Soft Pink
+          tertiary: const Color(0xFF64B5F6), // Soft Blue
+          surface: const Color(0xFFFDF2F5), // Very light pinkish
         ),
-        scaffoldBackgroundColor: const Color(
-          0xFFF5F7FA,
-        ), // Light grey-blue background for contrast
+        scaffoldBackgroundColor: const Color(0xFFFAFAFA),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1565C0),
+          backgroundColor: Color(0xFF9C27B0),
           foregroundColor: Colors.white,
           elevation: 0,
           centerTitle: true,
@@ -50,13 +49,14 @@ class MyApp extends StatelessWidget {
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1565C0),
+            backgroundColor: const Color(0xFF9C27B0),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
             ),
-            elevation: 3,
+            elevation: 4,
+            shadowColor: const Color(0xFF9C27B0).withOpacity(0.4),
             textStyle: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -67,49 +67,48 @@ class MyApp extends StatelessWidget {
           filled: true,
           fillColor: Colors.white,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF1565C0), width: 2),
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF9C27B0), width: 1.5),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
             vertical: 16,
           ),
-          prefixIconColor: const Color(0xFF1565C0),
+          prefixIconColor: const Color(0xFF9C27B0),
         ),
         cardTheme: CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.grey.shade100),
           ),
           color: Colors.white,
           surfaceTintColor: Colors.transparent,
         ),
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: Colors.white,
-          elevation: 2,
-          shadowColor: Colors.black12,
-          indicatorColor: const Color(0xFF1565C0).withOpacity(0.15),
+          elevation: 0,
+          indicatorColor: const Color(0xFF9C27B0).withOpacity(0.1),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1565C0),
+                color: Color(0xFF9C27B0),
               );
             }
             return const TextStyle(color: Colors.grey);
           }),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(color: Color(0xFF1565C0));
+              return const IconThemeData(color: Color(0xFF9C27B0));
             }
             return const IconThemeData(color: Colors.grey);
           }),

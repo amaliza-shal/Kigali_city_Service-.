@@ -9,6 +9,9 @@ class AuthService {
   // Stream of auth changes
   Stream<User?> get user => _auth.authStateChanges();
 
+  // Get current user
+  User? get currentUser => _auth.currentUser;
+
   // Sign Up
   Future<UserCredential> signUp(
     String email,
