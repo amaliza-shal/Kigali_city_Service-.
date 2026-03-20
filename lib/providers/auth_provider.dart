@@ -15,7 +15,8 @@ class AuthProvider extends ChangeNotifier {
 
   void _init() {
     _authService.user.listen((user) async {
-      if (user != null && user.emailVerified) {
+      if (user != null) {
+        // For browser/recording: Allow access. In production, check emailVerified
         _userProfile = await _authService.getUserProfile(user.uid);
         notifyListeners();
       } else {
@@ -38,24 +39,11 @@ class AuthProvider extends ChangeNotifier {
       User? user = userCredential.user;
 
       if (user != null) {
-        // Force refresh user data from Firebase
-        await user.reload();
-        // Wait a brief moment to ensure propagation
-        await Future.delayed(const Duration(milliseconds: 500));
+        // For browser/demo: Allow immediate access
+        // In production, add email verification check here:
+        // if (!user.emailVerified) { ... }
 
-        // Get the reloaded user instance directly from FirebaseAuth
-        // This is safer than relying on the old 'user' variable
-        final refreshedUser = FirebaseAuth.instance.currentUser;
-
-        if (refreshedUser != null && !refreshedUser.emailVerified) {
-          await _authService.signOut();
-          throw 'Email not verified yet. Please check your inbox (and spam folder) for the verification link.';
-        }
-
-        // Fetch user profile from Firestore
-        if (refreshedUser != null) {
-          _userProfile = await _authService.getUserProfile(refreshedUser.uid);
-        }
+        _userProfile = await _authService.getUserProfile(user.uid);
       }
     } catch (e) {
       rethrow;
