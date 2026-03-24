@@ -82,9 +82,9 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     // Sort by distance if we have location, otherwise just sort by name or recent
     // For demo, we just show them as is.
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: SafeArea(
+    return Container(
+      color: const Color(0xFFF8F9FA),
+      child: SafeArea(
         child: Column(
           children: [
             // Custom Header Area

@@ -165,7 +165,7 @@ class ListingCard extends StatelessWidget {
     );
   }
 
-  IconData _getIconForCategory(String category) {
+  static IconData getIconForCategory(String category) {
     switch (category) {
       case 'Hospital':
         return Icons.local_hospital;
@@ -184,5 +184,9 @@ class ListingCard extends StatelessWidget {
       default:
         return Icons.place;
     }
+  }
+
+  IconData _getIconForCategory(String category) {
+    return ListingCard.getIconForCategory(category);
   }
 }

@@ -155,7 +155,90 @@ class MyListingsScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  child: ListingCard(listing: listing), // Reusing our nice card
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        ListingCard(listing: listing),
+                        Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          ListingFormScreen(listing: listing),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.edit),
+                                label: const Text('Edit'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue.shade400,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (ctx) => AlertDialog(
+                                      title: const Text('Delete Listing'),
+                                      content: const Text(
+                                        'Are you sure you want to delete this listing?',
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(ctx),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(ctx);
+                                            Provider.of<ListingProvider>(
+                                              context,
+                                              listen: false,
+                                            ).deleteListing(listing.id);
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: const Text(
+                                                  'Listing deleted',
+                                                ),
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          },
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.red,
+                                          ),
+                                          child: const Text('Delete'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.delete),
+                                label: const Text('Delete'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red.shade400,
+                                  foregroundColor: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),

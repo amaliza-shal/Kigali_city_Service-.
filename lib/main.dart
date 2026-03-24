@@ -114,7 +114,15 @@ class MyApp extends StatelessWidget {
           }),
         ),
       ),
-      home: const LoginScreen(),
+      home: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          // If user is logged in and verified, show MainWrapper
+          // Otherwise show LoginScreen
+          return authProvider.userProfile != null
+              ? const MainWrapper()
+              : const LoginScreen();
+        },
+      ),
       routes: {
         '/home': (context) => const MainWrapper(),
         '/login': (context) => const LoginScreen(),

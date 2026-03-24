@@ -41,11 +41,12 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
     _descController = TextEditingController(
       text: widget.listing?.description ?? '',
     );
+    // Default to Kigali Center if new listing, to avoid 0.0 or empty
     _latController = TextEditingController(
-      text: widget.listing?.latitude.toString() ?? '',
+      text: widget.listing?.latitude.toString() ?? '-1.9441',
     );
     _lngController = TextEditingController(
-      text: widget.listing?.longitude.toString() ?? '',
+      text: widget.listing?.longitude.toString() ?? '30.0619',
     );
 
     _selectedCategory = widget.listing?.category;
@@ -131,12 +132,21 @@ class _ListingFormScreenState extends State<ListingFormScreen> {
       }
 
       if (mounted) {
+        // Clear search and filters so user sees their new listing immediately
+        provider.searchListings('');
+        provider.filterByCategory(null);
+
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              widget.listing == null ? 'Listing Created' : 'Listing Updated',
+              widget.listing == null
+                  ? '✅ Listing Created! View on Home & Map'
+                  : '✏️ Listing Updated!',
             ),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
           ),
         );
       }

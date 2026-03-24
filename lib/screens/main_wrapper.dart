@@ -33,7 +33,7 @@ class _MainWrapperState extends State<MainWrapper> {
           });
         },
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.list), label: 'Directory'),
+          NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(
             icon: Icon(Icons.edit_note),
             label: 'My Listings',

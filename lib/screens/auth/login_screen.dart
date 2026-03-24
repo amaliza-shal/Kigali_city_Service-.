@@ -43,13 +43,68 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(e.toString().replaceAll('Exception: ', '')),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          String errorMessage = e.toString().replaceAll('Exception: ', '');
+          if (errorMessage.contains('email-not-verified')) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Email Verification Required'),
+                content: const Text(
+                  'A verification email has been sent to your inbox. Please verify your email, then tap "Try Again" below.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Cancel'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      setState(() => _isLoading = true);
+                      try {
+                        await Provider.of<AuthProvider>(
+                          context,
+                          listen: false,
+                        ).checkEmailVerification();
+
+                        if (!mounted) return;
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MainWrapper(),
+                          ),
+                        );
+                      } catch (retryError) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Still not verified. Check your email: ${retryError.toString().replaceAll('Exception: ', '')}',
+                              ),
+                              backgroundColor: Colors.orange,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => _isLoading = false);
+                      }
+                    },
+                    child: const Text('Try Again'),
+                  ),
+                ],
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.redAccent,
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
         }
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -246,8 +301,8 @@ class _LoginScreenState extends State<LoginScreen> {
             // Footer
             Padding(
               padding: const EdgeInsets.only(bottom: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap(
+                alignment: WrapAlignment.center,
                 children: [
                   Text(
                     "Don't have an account? ",

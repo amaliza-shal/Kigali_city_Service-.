@@ -35,15 +35,23 @@ class _SignupScreenState extends State<SignupScreen> {
           _nameController.text.trim(),
         );
         if (mounted) {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                "Account created! Please verify your email before logging in.",
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Account Created!'),
+              content: const Text(
+                'A verification email has been sent to your inbox. Please open your email, click the verification link, then return here and login.',
               ),
-              backgroundColor: Colors.green,
-              behavior: SnackBarBehavior.floating,
-              duration: Duration(seconds: 4),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx); // Close dialog
+                    Navigator.pop(context); // Return to login screen
+                  },
+                  child: const Text('Go to Login'),
+                ),
+              ],
             ),
           );
         }
@@ -229,8 +237,8 @@ class _SignupScreenState extends State<SignupScreen> {
             // Footer
             Padding(
               padding: const EdgeInsets.only(bottom: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap(
+                alignment: WrapAlignment.center,
                 children: [
                   Text(
                     "Already have an account? ",

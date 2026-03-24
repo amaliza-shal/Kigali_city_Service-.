@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../models/listing_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/listing_provider.dart';
+import '../../widgets/listing_card.dart';
 import 'listing_form_screen.dart';
 
 class ListingDetailScreen extends StatelessWidget {
@@ -25,10 +26,9 @@ class ListingDetailScreen extends StatelessWidget {
 
     if (await canLaunchUrl(navigationUrl)) {
       await launchUrl(navigationUrl);
-    } else if (await canLaunchUrl(webUrl)) {
-      await launchUrl(webUrl);
     } else {
-      throw 'Could not launch maps';
+      // Always launch web url if native fails or on web
+      await launchUrl(webUrl);
     }
   }
 
@@ -75,8 +75,8 @@ class ListingDetailScreen extends StatelessWidget {
                         point: LatLng(listing.latitude, listing.longitude),
                         width: 40,
                         height: 40,
-                        child: const Icon(
-                          Icons.location_on,
+                        child: Icon(
+                          ListingCard.getIconForCategory(listing.category),
                           color: Colors.red,
                           size: 40,
                         ),
@@ -103,6 +103,7 @@ class ListingDetailScreen extends StatelessWidget {
                   icon: const Icon(Icons.edit, color: Colors.white),
                   tooltip: 'Edit Listing',
                   onPressed: () {
+                    // Import needed to use ListingFormScreen
                     Navigator.push(
                       context,
                       MaterialPageRoute(

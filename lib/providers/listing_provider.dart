@@ -67,11 +67,6 @@ class ListingProvider extends ChangeNotifier {
     );
   }
 
-  void _injectMockData() {
-    _listings = _getMockListings();
-    _applyFilters();
-  }
-
   // Refactored to return list for re-use
   List<Listing> _getMockListings() {
     return [
@@ -336,40 +331,33 @@ class ListingProvider extends ChangeNotifier {
   }
 
   Future<void> addListing(Listing listing) async {
-    try {
-      await _databaseService.addListing(listing);
-    } catch (e) {
-      print("Firestore add failed (Demo Mode Activated): $e");
-      // Fallback: Add to local list so user sees it "worked"
-      _listings.add(listing);
-      _applyFilters();
-      notifyListeners();
-    }
+    // Optimistic update for instant UI feedback
+    _listings.insert(0, listing);
+    _applyFilters();
+    notifyListeners();
+
+    // Only use Firestore. No local fallback that gets overwritten.
+    await _databaseService.addListing(listing);
   }
 
   Future<void> updateListing(Listing listing) async {
-    try {
-      await _databaseService.updateListing(listing);
-    } catch (e) {
-      print("Firestore update failed (Demo Mode Activated): $e");
-      final index = _listings.indexWhere((l) => l.id == listing.id);
-      if (index != -1) {
-        _listings[index] = listing;
-        _applyFilters();
-        notifyListeners();
-      }
-    }
-  }
-
-  Future<void> deleteListing(String id) async {
-    try {
-      await _databaseService.deleteListing(id);
-    } catch (e) {
-      print("Firestore delete failed (Demo Mode Activated): $e");
-      _listings.removeWhere((l) => l.id == id);
+    // Optimistic update
+    final index = _listings.indexWhere((l) => l.id == listing.id);
+    if (index != -1) {
+      _listings[index] = listing;
       _applyFilters();
       notifyListeners();
     }
+    await _databaseService.updateListing(listing);
+  }
+
+  Future<void> deleteListing(String id) async {
+    // Optimistic update
+    _listings.removeWhere((l) => l.id == id);
+    _applyFilters();
+    notifyListeners();
+
+    await _databaseService.deleteListing(id);
   }
 
   void searchListings(String query) {

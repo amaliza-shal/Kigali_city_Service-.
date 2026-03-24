@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../providers/listing_provider.dart';
+import '../../widgets/listing_card.dart';
 import '../listings/listing_detail_screen.dart';
 
 class MapScreen extends StatefulWidget {
@@ -17,7 +18,6 @@ class _MapScreenState extends State<MapScreen> {
   // Center map on Kigali Convention Centre area by default
   static const LatLng _kigaliCenter = LatLng(-1.9538, 30.0934);
   final MapController _mapController = MapController();
-  bool _locationPermissionGranted = false;
   Position? _currentPosition;
 
   @override
@@ -27,35 +27,36 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _checkLocationPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+    try {
+      bool serviceEnabled;
+      LocationPermission permission;
 
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
         return;
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      return;
-    }
+      permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return;
+        }
+      }
 
-    // Get current position
-    try {
+      if (permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      // Get current position
       Position position = await Geolocator.getCurrentPosition();
-      setState(() {
-        _locationPermissionGranted = true;
-        _currentPosition = position;
-      });
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+        });
+      }
       // Optional: Move map to user location on startup
-      // _mapController.move(LatLng(position.latitude, position.longitude), 14);
+      _mapController.move(LatLng(position.latitude, position.longitude), 14);
     } catch (e) {
       print("Error getting location: $e");
     }
@@ -118,8 +119,10 @@ class _MapScreenState extends State<MapScreen> {
                                   ),
                                 ],
                               ),
-                              child: const Icon(
-                                Icons.location_on,
+                              child: Icon(
+                                ListingCard.getIconForCategory(
+                                  listing.category,
+                                ),
                                 color: Colors.white,
                                 size: 20,
                               ),

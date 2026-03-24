@@ -16,9 +16,16 @@ class AuthProvider extends ChangeNotifier {
   void _init() {
     _authService.user.listen((user) async {
       if (user != null) {
-        // For browser/recording: Allow access. In production, check emailVerified
-        _userProfile = await _authService.getUserProfile(user.uid);
-        notifyListeners();
+        if (user.emailVerified) {
+          _userProfile = await _authService.getUserProfile(user.uid);
+          notifyListeners();
+        } else {
+          // If logged in but not verified, show as logged out or handle appropriately
+          // Usually we sign them out or let them access limited features
+          // Here we just don't set the profile so the app remains in "login" state
+          _userProfile = null;
+          notifyListeners();
+        }
       } else {
         _userProfile = null;
         notifyListeners();
@@ -39,9 +46,13 @@ class AuthProvider extends ChangeNotifier {
       User? user = userCredential.user;
 
       if (user != null) {
-        // For browser/demo: Allow immediate access
-        // In production, add email verification check here:
-        // if (!user.emailVerified) { ... }
+        if (!user.emailVerified) {
+          await _authService.signOut();
+          throw FirebaseAuthException(
+            code: 'email-not-verified',
+            message: 'Please verify your email address before logging in.',
+          );
+        }
 
         _userProfile = await _authService.getUserProfile(user.uid);
       }
@@ -75,6 +86,43 @@ class AuthProvider extends ChangeNotifier {
     await _authService.signOut();
     _userProfile = null;
     notifyListeners();
+  }
+
+  // Reload and check email verification status (useful after user verifies email)
+  Future<void> checkEmailVerification() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
+
+      // Reload the user to get fresh verification status
+      await currentUser.reload();
+      final updatedUser = _authService.currentUser;
+
+      if (updatedUser == null) {
+        throw Exception('User data not available');
+      }
+
+      if (!updatedUser.emailVerified) {
+        throw FirebaseAuthException(
+          code: 'email-not-verified',
+          message:
+              'Email not verified yet. Please check your email and verify your account.',
+        );
+      }
+
+      // Email is verified, load the profile
+      _userProfile = await _authService.getUserProfile(updatedUser.uid);
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
   }
 
   // Update Notification Preference
